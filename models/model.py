@@ -25,3 +25,9 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan"
     )
+    exercise_progress = relationship(
+        "ExerciseProgress",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+
