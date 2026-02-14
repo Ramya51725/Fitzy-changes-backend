@@ -121,6 +121,38 @@ def update_exercise(
     return ex
 
 
+@router.get("/warmup/{level}/{category_id}")
+def get_warmup(
+    level: str,
+    category_id: int,
+    db: Session = Depends(get_db)   # 🔥 THIS WAS MISSING
+):
+
+    # If user category = 1 → warmup from 2 & 3
+    if category_id == 1:
+        exercises = db.query(Exercise).filter(
+            Exercise.level == level,
+            Exercise.category_id.in_([2, 3])
+        ).all()
+
+    # If user category = 2 → warmup from 1 & 3
+    elif category_id == 2:
+        exercises = db.query(Exercise).filter(
+            Exercise.level == level,
+            Exercise.category_id.in_([1, 3])
+        ).all()
+
+    # If user category = 3 → warmup from 1 & 2
+    else:
+        exercises = db.query(Exercise).filter(
+            Exercise.level == level,
+            Exercise.category_id.in_([1, 2])
+        ).all()
+
+    return exercises
+
+
+
 @router.delete("/delete/{id}")
 def delete_exercise(id: int, db: Session = Depends(get_db)):
     exercise = db.query(Exercise).filter(
