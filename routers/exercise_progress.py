@@ -50,7 +50,7 @@ def get_progress(user_id: int, level: str, db: Session = Depends(get_db)):
     return progress
 
 
-# 🔥 UPDATE PROGRESS
+# 🔥 UPDATE PROGRESS (Partial Update)
 @router.put("/update/{user_id}/{level}", response_model=ProgressResponse)
 def update_progress(
     user_id: int,
@@ -67,7 +67,9 @@ def update_progress(
     if not progress:
         raise HTTPException(status_code=404, detail="Progress not found")
 
-    for key, value in progress_update.dict().items():
+    update_data = progress_update.dict(exclude_unset=True)
+
+    for key, value in update_data.items():
         setattr(progress, key, value)
 
     db.commit()

@@ -11,9 +11,6 @@ from routers import progress
 from routers import exercise_progress
 
 
-
-
-
 app = FastAPI()
 
 app.add_middleware(

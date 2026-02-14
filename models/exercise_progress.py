@@ -1,7 +1,8 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from database.db import Base   
+from database.db import Base
+
 
 class ExerciseProgress(Base):
     __tablename__ = "exercise_progress"
@@ -14,7 +15,7 @@ class ExerciseProgress(Base):
         nullable=False
     )
 
-    level = Column(String(20), nullable=False)   # level1 / level2
+    level = Column(String(20), nullable=False)
     category_id = Column(Integer, nullable=False)
 
     current_month = Column(Integer, default=1)
@@ -29,7 +30,5 @@ class ExerciseProgress(Base):
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    user = relationship(
-        "User",
-        back_populates="exercise_progress"
-    )
+    # Relationship
+    user = relationship("User", back_populates="progress")
