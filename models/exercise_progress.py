@@ -31,4 +31,4 @@ class ExerciseProgress(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationship
-    user = relationship("User", back_populates="progress")
+user = relationship("User", back_populates="exercise_progress")

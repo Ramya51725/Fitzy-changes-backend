@@ -6,22 +6,34 @@ from models.exemodel import Exercise
 from models.dietmodel import DietVeg
 from models.model import User
 from models.nonveg_model import DietNonVeg
-from routers import user, diet, nonveg_diet, exercise,category
+from routers import user, diet, nonveg_diet, exercise,category, exercise_log
 from routers import progress
 from routers import exercise_progress
 
 
 app = FastAPI()
 
+# Allow both localhost and 127.0.0.1 for CORS
+origins = [
+    "http://localhost:5500",  # Live Server default
+    "http://127.0.0.1:5500",
+    "http://localhost:3000",
+    "http://127.0.0.1:8000",
+    "*",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],     
+    allow_origins=origins,     
     allow_credentials=True,
     allow_methods=["*"],      
     allow_headers=["*"],
 )
 
+app.router.redirect_slashes = False # Prevent unwanted redirects
+
 app.include_router(exercise_progress.router)
+app.include_router(exercise_log.router)
 app.include_router(progress.router)
 app.include_router(user.router)
 app.include_router(diet.router)
