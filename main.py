@@ -6,6 +6,8 @@ from models.exemodel import Exercise
 from models.dietmodel import DietVeg
 from models.model import User
 from models.nonveg_model import DietNonVeg
+from models.exercise_log import ExerciseLog
+from models.exercise_progress import ExerciseProgress
 from routers import user, diet, nonveg_diet, exercise,category, exercise_log
 from routers import progress
 from routers import exercise_progress
@@ -41,7 +43,7 @@ app.include_router(nonveg_diet.router)
 app.include_router(exercise.router)
 app.include_router(category.router)
 
-# Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
 @app.get("/")
 def get_home():
