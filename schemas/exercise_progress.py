@@ -16,6 +16,7 @@ class ProgressUpdate(BaseModel):
     current_day: Optional[int] = None
     completed_days: Optional[int] = None
     completed_exercises: Optional[int] = None
+    completed_months: Optional[int] = None
     is_month_completed: Optional[bool] = None
     is_level_completed: Optional[bool] = None
 
@@ -31,6 +32,7 @@ class ProgressResponse(BaseModel):
     current_day: int
     completed_days: int
     completed_exercises: int
+    completed_months: int
     is_month_completed: bool
     is_level_completed: bool
 

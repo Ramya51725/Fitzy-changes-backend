@@ -24,6 +24,7 @@ class ExerciseProgress(Base):
 
     completed_days = Column(Integer, default=0)
     completed_exercises = Column(Integer, default=0)
+    completed_months = Column(Integer, default=0)
 
     is_month_completed = Column(Boolean, default=False)
     is_level_completed = Column(Boolean, default=False)

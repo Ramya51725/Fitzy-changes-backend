@@ -38,6 +38,7 @@ def complete_day(progress: ProgressCreate, db: Session = Depends(get_db)):
         if existing.current_week > 4:
             existing.current_week = 1
             existing.current_month += 1
+            existing.completed_months += 1
             existing.is_month_completed = True
 
         if existing.current_month > 8:
@@ -121,6 +122,8 @@ def update_progress(
         progress.completed_days = update_data.completed_days
     if update_data.completed_exercises is not None:
         progress.completed_exercises = update_data.completed_exercises
+    if update_data.completed_months is not None:
+        progress.completed_months = update_data.completed_months
     if update_data.is_month_completed is not None:
         progress.is_month_completed = update_data.is_month_completed
     if update_data.is_level_completed is not None:

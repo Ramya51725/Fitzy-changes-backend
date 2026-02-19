@@ -8,8 +8,7 @@ from models.model import User
 from models.nonveg_model import DietNonVeg
 from models.exercise_log import ExerciseLog
 from models.exercise_progress import ExerciseProgress
-from models.user_state import UserActiveState
-from routers import user, diet, nonveg_diet, exercise,category, exercise_log, user_state
+from routers import user, diet, nonveg_diet, exercise,category, exercise_log
 from routers import progress
 from routers import exercise_progress
 
@@ -37,7 +36,6 @@ app.router.redirect_slashes = False # Prevent unwanted redirects
 
 app.include_router(exercise_progress.router)
 app.include_router(exercise_log.router)
-app.include_router(user_state.router)
 app.include_router(progress.router)
 app.include_router(user.router)
 app.include_router(diet.router)
