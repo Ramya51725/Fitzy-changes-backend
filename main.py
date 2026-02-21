@@ -77,7 +77,7 @@ def startup_event():
 
 @app.get("/")
 def get_home():
-    return {"msg": "Welcome to Fitzy Lift.Sweat.Repeat"}
+    return {"msg": "Welcome to Fitzy Standalone"}
 
 
 # real code 1
