@@ -17,11 +17,13 @@ app = FastAPI()
 
 # Allow both localhost and 127.0.0.1 for CORS
 origins = [
-    "http://localhost:5500",  # Live Server default
+    "http://localhost:5500",
     "http://127.0.0.1:5500",
+    "http://localhost:5501",
+    "http://127.0.0.1:5501",
     "http://localhost:3000",
     "http://127.0.0.1:8000",
-    "*",
+    "*"
 ]
 
 app.add_middleware(
@@ -43,10 +45,35 @@ app.include_router(nonveg_diet.router)
 app.include_router(exercise.router)
 app.include_router(category.router)
 
-print("DEBUG: Tables in metadata:", Base.metadata.tables.keys())
-print("DEBUG: Starting table creation...")
-Base.metadata.create_all(bind=engine)
-print("DEBUG: Table creation finished.")
+# 🔥 Tables & Migrations on Startup
+@app.on_event("startup")
+def startup_event():
+    try:
+        print("DEBUG: Starting table creation...")
+        Base.metadata.create_all(bind=engine)
+        print("DEBUG: Table creation finished.")
+        
+        # 🔥 MANUAL MIGRATIONS (Ensure new columns exist)
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            # 1. Update user_progress
+            try:
+                conn.execute(text("ALTER TABLE user_progress ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();"))
+                conn.commit()
+            except Exception as e:
+                print(f"Migration 1 error: {e}")
+
+            # 2. Update exercise_progress
+            try:
+                conn.execute(text("ALTER TABLE exercise_progress ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();"))
+                conn.execute(text("ALTER TABLE exercise_progress ADD COLUMN IF NOT EXISTS last_completed_date TIMESTAMPTZ;"))
+                conn.commit()
+            except Exception as e:
+                print(f"Migration 2 error: {e}")
+            
+        print("Database synced successfully ✅")
+    except Exception as e:
+        print(f"Database sync error during startup: {e}")
 
 @app.get("/")
 def get_home():

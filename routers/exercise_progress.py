@@ -1,7 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
+from typing import Optional
 from sqlalchemy.orm import Session
+from datetime import datetime, date
 from dependencies import get_db
 from models.exercise_progress import ExerciseProgress
+from models.progress import UserProgress
 from schemas.exercise_progress import (
     ProgressCreate,
     ProgressUpdate,
@@ -13,8 +16,39 @@ router = APIRouter(
     tags=["Exercise Progress"]
 )
 
+def get_level_name(month: int) -> str:
+    if month <= 2:
+        return "Beginner"
+    elif month <= 4:
+        return "Intermediate"
+    elif month <= 6:
+        return "Advance"
+    else:
+        return "Expert"
 
-# =========================================
+
+def sync_diet_progress(user_id: int, completed_workout_days: int, db: Session):
+    """
+    Ensures that for every workout day completed, the corresponding 
+    diet day (up to day 30) is also marked as completed.
+    """
+    # We only have 30 days of diet plans in the current system
+    max_diet_days = min(completed_workout_days, 30)
+    
+    for day in range(1, max_diet_days + 1):
+        existing_diet = db.query(UserProgress).filter(
+            UserProgress.user_id == user_id,
+            UserProgress.day == day
+        ).first()
+        
+        if not existing_diet:
+            db.add(UserProgress(user_id=user_id, day=day, status="completed"))
+        elif existing_diet.status != "completed":
+            existing_diet.status = "completed"
+    
+    db.commit()
+
+
 # 🔥 COMPLETE DAY
 # =========================================
 @router.post("/complete-day", response_model=ProgressResponse)
@@ -27,9 +61,17 @@ def complete_day(progress: ProgressCreate, db: Session = Depends(get_db)):
     ).first()
 
     if existing:
+        # 🔥 Check if user already completed a workout today
+        today = date.today()
+        if existing.last_completed_date and existing.last_completed_date.date() == today:
+            raise HTTPException(
+                status_code=403, 
+                detail="You have already completed a workout for today. Please come back tomorrow!"
+            )
 
         existing.completed_days += 1
         existing.current_day += 1
+        existing.last_completed_date = datetime.now()
 
         if existing.current_day > 7:
             existing.current_day = 1
@@ -49,12 +91,16 @@ def complete_day(progress: ProgressCreate, db: Session = Depends(get_db)):
 
         db.commit()
         db.refresh(existing)
+
+        # 🔥 Sync Diet Progress
+        sync_diet_progress(existing.user_id, existing.completed_days, db)
+
         return existing
 
     # If no progress → create new
     new_progress = ExerciseProgress(
         user_id=progress.user_id,
-        level=progress.level,
+        level=get_level_name(1),
         category_id=progress.category_id,
         completed_days=0,
         current_day=1,
@@ -72,14 +118,29 @@ def complete_day(progress: ProgressCreate, db: Session = Depends(get_db)):
 # =========================================
 # 🔥 GET PROGRESS
 # =========================================
+@router.get("/{user_id}/{level}", response_model=ProgressResponse)
 @router.get("/{user_id}/{level}/{category_id}", response_model=ProgressResponse)
-def get_progress(user_id: int, level: str, category_id: int, db: Session = Depends(get_db)):
+def get_progress(
+    user_id: int, 
+    level: str, 
+    category_id: Optional[int] = None, 
+    db: Session = Depends(get_db)
+):
+    query = db.query(ExerciseProgress).filter(
+        ExerciseProgress.user_id == user_id
+    )
 
-    progress = db.query(ExerciseProgress).filter(
-        ExerciseProgress.user_id == user_id,
-        ExerciseProgress.level == level,
-        ExerciseProgress.category_id == category_id   # ✅ FIXED
-    ).first()
+    if level != "fitzy":
+        query = query.filter(ExerciseProgress.level == level)
+
+    if category_id is not None and category_id != 0:
+        query = query.filter(ExerciseProgress.category_id == category_id)
+    else:
+        # If no category_id and multiple exist, just get the latest or first
+        # Usually, for 'fitzy' level, there should be one main record
+        pass
+
+    progress = query.first()
 
     if not progress:
         raise HTTPException(status_code=404, detail="Progress not found")
@@ -88,22 +149,69 @@ def get_progress(user_id: int, level: str, category_id: int, db: Session = Depen
 
 
 # =========================================
+# 🔥 INIT PROGRESS (Create fresh record for new user)
+# =========================================
+@router.post("/init", response_model=ProgressResponse)
+def init_progress(progress: ProgressCreate, db: Session = Depends(get_db)):
+    """Creates a fresh Beginner (Month 1, Week 1, Day 1) record if one doesn't exist."""
+
+    existing = db.query(ExerciseProgress).filter(
+        ExerciseProgress.user_id == progress.user_id,
+        ExerciseProgress.level == progress.level,
+        ExerciseProgress.category_id == progress.category_id
+    ).first()
+
+    if existing:
+        # Already exists — return it as-is
+        return existing
+
+    # Create fresh beginner record
+    new_progress = ExerciseProgress(
+        user_id=progress.user_id,
+        level=get_level_name(1),
+        category_id=progress.category_id,
+        current_month=1,
+        current_week=1,
+        current_day=1,
+        completed_days=0,
+        completed_months=0,
+        completed_exercises=0,
+        is_month_completed=False,
+        is_level_completed=False
+    )
+
+    db.add(new_progress)
+    db.commit()
+    db.refresh(new_progress)
+
+    return new_progress
+
+
+
+# =========================================
 # 🔥 UPDATE PROGRESS
 # =========================================
+@router.put("/update/{user_id}/{level}", response_model=ProgressResponse)
 @router.put("/update/{user_id}/{level}/{category_id}", response_model=ProgressResponse)
 def update_progress(
     user_id: int, 
     level: str, 
-    category_id: int, 
     update_data: ProgressUpdate, 
+    category_id: Optional[int] = None, 
     db: Session = Depends(get_db)
 ):
 
-    progress = db.query(ExerciseProgress).filter(
-        ExerciseProgress.user_id == user_id,
-        ExerciseProgress.level == level,
-        ExerciseProgress.category_id == category_id
-    ).first()
+    query = db.query(ExerciseProgress).filter(
+        ExerciseProgress.user_id == user_id
+    )
+
+    if level != "fitzy":
+        query = query.filter(ExerciseProgress.level == level)
+
+    if category_id is not None and category_id != 0:
+        query = query.filter(ExerciseProgress.category_id == category_id)
+
+    progress = query.first()
 
     if not progress:
         raise HTTPException(status_code=404, detail="Progress not found")
@@ -114,11 +222,22 @@ def update_progress(
     # Sync fields if provided in request body
     if update_data.current_month is not None:
         progress.current_month = update_data.current_month
+        # 🔥 AUTO-UPDATE LEVEL NAME BASED ON MONTH
+        progress.level = get_level_name(progress.current_month)
     if update_data.current_week is not None:
         progress.current_week = update_data.current_week
     if update_data.current_day is not None:
         progress.current_day = update_data.current_day
     if update_data.completed_days is not None:
+        # 🔥 Prevent advancing more than one day per calendar day
+        if update_data.completed_days > progress.completed_days:
+            today = date.today()
+            if progress.last_completed_date and progress.last_completed_date.date() == today:
+                raise HTTPException(
+                    status_code=403, 
+                    detail="You have already completed a workout for today. Please come back tomorrow!"
+                )
+            progress.last_completed_date = datetime.now()
         progress.completed_days = update_data.completed_days
     if update_data.completed_exercises is not None:
         progress.completed_exercises = update_data.completed_exercises
@@ -131,6 +250,9 @@ def update_progress(
 
     db.commit()
     db.refresh(progress)
+
+    # 🔥 Sync Diet Progress
+    sync_diet_progress(progress.user_id, progress.completed_days, db)
 
     return progress
 

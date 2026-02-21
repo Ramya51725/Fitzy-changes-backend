@@ -16,7 +16,7 @@ class ExerciseProgress(Base):
     )
 
     level = Column(String(20), nullable=False)
-    category_id = Column(Integer, nullable=False)
+    category_id = Column(Integer, nullable=True)
 
     current_month = Column(Integer, default=1)
     current_week = Column(Integer, default=1)
@@ -30,6 +30,8 @@ class ExerciseProgress(Base):
     is_level_completed = Column(Boolean, default=False)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    last_completed_date = Column(DateTime(timezone=True), nullable=True)
 
     # Relationship
-user = relationship("User", back_populates="exercise_progress")
+    user = relationship("User", back_populates="exercise_progress")
