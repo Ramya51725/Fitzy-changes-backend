@@ -34,7 +34,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# app.router.redirect_slashes = False # Prevent unwanted redirects
+app.router.redirect_slashes = False # Prevent unwanted redirects
 
 app.include_router(exercise_progress.router)
 app.include_router(exercise_log.router)
