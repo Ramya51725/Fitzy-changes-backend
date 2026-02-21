@@ -36,14 +36,14 @@ app.add_middleware(
 
 # app.router.redirect_slashes = True # Let FastAPI handle slashes
 
-app.include_router(exercise_progress.router, prefix="/backend")
-app.include_router(exercise_log.router, prefix="/backend")
-app.include_router(progress.router, prefix="/backend")
-app.include_router(user.router, prefix="/backend")
-app.include_router(diet.router, prefix="/backend")
-app.include_router(nonveg_diet.router, prefix="/backend")
-app.include_router(exercise.router, prefix="/backend")
-app.include_router(category.router, prefix="/backend")
+app.include_router(exercise_progress.router)
+app.include_router(exercise_log.router)
+app.include_router(progress.router)
+app.include_router(user.router)
+app.include_router(diet.router)
+app.include_router(nonveg_diet.router)
+app.include_router(exercise.router)
+app.include_router(category.router)
 
 # 🔥 Tables & Migrations on Startup
 @app.on_event("startup")
