@@ -36,14 +36,14 @@ app.add_middleware(
 
 app.router.redirect_slashes = False # Prevent unwanted redirects
 
-app.include_router(exercise_progress.router)
-app.include_router(exercise_log.router)
-app.include_router(progress.router)
-app.include_router(user.router)
-app.include_router(diet.router)
-app.include_router(nonveg_diet.router)
-app.include_router(exercise.router)
-app.include_router(category.router)
+app.include_router(exercise_progress.router, prefix="/api")
+app.include_router(exercise_log.router, prefix="/api")
+app.include_router(progress.router, prefix="/api")
+app.include_router(user.router, prefix="/api")
+app.include_router(diet.router, prefix="/api")
+app.include_router(nonveg_diet.router, prefix="/api")
+app.include_router(exercise.router, prefix="/api")
+app.include_router(category.router, prefix="/api")
 
 # 🔥 Tables & Migrations on Startup
 @app.on_event("startup")
