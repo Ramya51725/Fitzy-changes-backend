@@ -54,7 +54,7 @@ def login_user(user: UserLogin, db: Session = Depends(get_db)):
 
 
 # ✅ CREATE USER
-@router.post("/")
+@router.post("")
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
     try:
         existing = db.query(User).filter(User.email == user.email).first()
