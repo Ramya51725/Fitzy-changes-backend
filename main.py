@@ -34,7 +34,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.router.redirect_slashes = False # Prevent unwanted redirects
+# app.router.redirect_slashes = True # Let FastAPI handle slashes
 
 app.include_router(exercise_progress.router, prefix="/api")
 app.include_router(exercise_log.router, prefix="/api")
